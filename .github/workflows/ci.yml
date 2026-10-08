@@ -23,11 +23,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip setuptools
-        pip install polars>=1.0.0 pyarrow>=14.0.0 click>=8.0.0
-        pip install pytest>=7.0.0 pytest-cov>=4.0.0 ruff>=0.4.0
-        PYTHONPATH=$PYTHONPATH:$PWD/src
-        echo "PYTHONPATH=$PWD/src" >> $GITHUB_ENV
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
     
     - name: Lint with ruff
       run: |
