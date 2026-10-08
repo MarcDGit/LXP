@@ -14,7 +14,8 @@ def load_bigquery(
     value_column: str,
     maximum_bytes_billed: int | None = None,
     refresh: bool = False,
-) -> pl.DataFrame:
+    _client=None,
+):
     """Load sales history from BigQuery with Parquet caching.
 
     Args:
@@ -23,6 +24,7 @@ def load_bigquery(
         value_column: Name of the value column
         maximum_bytes_billed: Maximum bytes to bill (default 1 GB)
         refresh: If True, bypass cache and refresh data
+        _client: Internal testing parameter for client injection
 
     Returns:
         Polars DataFrame with validated columns
@@ -43,15 +45,20 @@ def load_bigquery(
         if not missing_columns:
             return df.select(required_columns)
 
-    credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    if credentials_path:
-        client = bigquery.Client.from_service_account_json(credentials_path)
+    if _client is None:
+        credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        if credentials_path:
+            client = bigquery.Client.from_service_account_json(credentials_path)
+        else:
+            client = bigquery.Client()
     else:
-        client = bigquery.Client()
+        client = _client
+
+    if maximum_bytes_billed is None:
+        maximum_bytes_billed = 1_000_000_000
 
     job_config = bigquery.QueryJobConfig(use_query_cache=True)
-    if maximum_bytes_billed is not None:
-        job_config.maximum_bytes_billed = maximum_bytes_billed
+    job_config.maximum_bytes_billed = maximum_bytes_billed
 
     dry_run_config = bigquery.QueryJobConfig(dry_run=True)
     dry_run_job = client.query(query, job_config=dry_run_config)
@@ -59,7 +66,7 @@ def load_bigquery(
 
     print(f"Estimated bytes to process: {estimated_bytes:,}")
 
-    if maximum_bytes_billed and estimated_bytes > maximum_bytes_billed:
+    if estimated_bytes > maximum_bytes_billed:
         msg = (
             f"Query would process {estimated_bytes:,} bytes, "
             f"exceeding limit of {maximum_bytes_billed:,}"
