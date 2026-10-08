@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Lonely Planner
+data/cache/
+data/out/
+*.json
+!pyproject.toml
