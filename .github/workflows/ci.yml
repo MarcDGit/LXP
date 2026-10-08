@@ -27,7 +27,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install ".[dev]"
+        pip install --no-build-isolation ".[dev]"
     
     - name: Lint with ruff
       run: |
